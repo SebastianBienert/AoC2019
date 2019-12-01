@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,13 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="data\day1.txt">
+    <None Update="data\day1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Compile Include="Day1.fs" />
-    <Compile Include="Program.fs" />
+    </None>
   </ItemGroup>
-
-  <ItemGroup />
 
 </Project>
