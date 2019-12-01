@@ -1,5 +1,4 @@
-﻿
-module Day1 
+﻿module FsharpDay1 
 open System.IO
 open System
 

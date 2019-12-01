@@ -4,7 +4,7 @@ open System
 
 [<EntryPoint>]
 let main argv =
-    printfn "1: %d\n" Day1.part1
-    printfn "2: %d" Day1.part2
-    Console.ReadLine()
+    printfn "1: %d\n" FsharpDay1.part1
+    printfn "2: %d" FsharpDay1.part2
+    Console.ReadLine() |> ignore
     0
