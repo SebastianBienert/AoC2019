@@ -7,7 +7,7 @@ namespace CHash
     {
         static void Main(string[] args)
         {
-            var absw = Day2.Solution2();
+            var absw = Day3.Solution2();
             Console.WriteLine(absw);
             Console.ReadLine();
         }

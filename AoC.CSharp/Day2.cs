@@ -15,26 +15,7 @@ namespace AoC.CSharp
                 .Select(x => Convert.ToInt32(x))
                 .ToList();
 
-            input[1] = 12;
-            input[2] = 2;
-
-            for (var i = 0; i < input.Count; i += 4)
-            {
-                if (input[i] == 1)
-                {
-                    input[input[i + 3]] = input[input[i + 1]] + input[input[i + 2]];
-                }
-                else if (input[i] == 2)
-                {
-                    input[input[i + 3]] = input[input[i + 1]] * input[input[i + 2]];
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return input[0];
+            return CalculateResult(input, 12, 2);
         }
 
         public static int Solution2()

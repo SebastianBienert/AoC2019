@@ -6,13 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Day2.fs" />
+    <Content Include="data\day2.txt" />
     <Content Include="data\day1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Compile Include="Day1.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
-  <ItemGroup />
 
 </Project>
