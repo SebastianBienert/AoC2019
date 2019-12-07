@@ -9,7 +9,7 @@ namespace CHash
         static void Main(string[] args)
         {
 
-            Console.WriteLine(Day5.Solution2());
+            Console.WriteLine(Day7.Solution2());
             Console.ReadLine();
         }
     }
