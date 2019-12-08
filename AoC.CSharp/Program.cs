@@ -8,8 +8,8 @@ namespace CHash
     {
         static void Main(string[] args)
         {
-
-            Console.WriteLine(Day7.Solution2());
+            Console.WriteLine(Day8.Solution1());
+            Day8.Solution2();
             Console.ReadLine();
         }
     }
