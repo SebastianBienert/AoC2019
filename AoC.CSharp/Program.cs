@@ -1,6 +1,7 @@
 ﻿using System;
 using AoC.CSharp;
 using AoC.CSharp.data;
+using AoC.CSharpDay9;
 
 namespace CHash
 {
@@ -8,8 +9,7 @@ namespace CHash
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(Day8.Solution1());
-            Day8.Solution2();
+            Day9.Solution2();
             Console.ReadLine();
         }
     }
