@@ -66,7 +66,7 @@ namespace AoC.CSharpDay10
 
         public int GetHashCode(Vector obj)
         {
-            //WTF? why obj.X.HashCode() + obj.y.Hashcode() does not work
+            //THIS IS TRICKY
             return 1;
         }
     }
@@ -78,10 +78,9 @@ namespace AoC.CSharpDay10
                 .Select((line, y) => line.ToCharArray().Select((sign, x) => new Coord(x, y, sign.ToString())).ToList())
                 .ToList();
 
-            var asteroids = input.SelectMany(x => x).Where(x => x.Value == "#").ToList();
-            var asteroidsSight = asteroids.Select(x => new {Asteroid = x, SightCount = GetNumberOfAsteroidsInSight(input, x)}).ToList();
-            var answer = asteroidsSight.Max(x => x.SightCount);
-
+            var answer = input.SelectMany(x => x).Where(x => x.Value == "#")
+                              .Select(x => new { Asteroid = x, SightCount = GetNumberOfAsteroidsInSight(input, x) })
+                              .Max(x => x.SightCount);
 
             return answer;
         }
@@ -92,77 +91,76 @@ namespace AoC.CSharpDay10
                 .Select((line, y) => line.ToCharArray().Select((sign, x) => new Coord(x, y, sign.ToString())).ToList())
                 .ToList();
 
-            var asteroids = input.SelectMany(x => x).Where(x => x.Value == "#").ToList();
-            var asteroidsSight = asteroids.Select(x => new { Asteroid = x, SightCount = GetNumberOfAsteroidsInSight(input, x) }).ToList();
+            var asteroidsSight = input
+                .SelectMany(x => x).Where(x => x.Value == "#")
+                .Select(x => new { Asteroid = x, SightCount = GetNumberOfAsteroidsInSight(input, x) })
+                .ToList();
+
             var bestSightCount = asteroidsSight.Max(x => x.SightCount);
 
-            var bestAsteroid = asteroidsSight.Where(x => x.SightCount == bestSightCount).Select(x => x.Asteroid).FirstOrDefault();
-            GetVaporizedAsteroids(input, bestAsteroid);
+            var bestAsteroid = asteroidsSight.Where(x => x.SightCount == bestSightCount)
+                                             .Select(x => x.Asteroid)
+                                             .FirstOrDefault();
 
-            return 0;
-
+            var result = GetVaporizedAsteroids(input, bestAsteroid);
+            return result;
         }
 
-        public static void GetVaporizedAsteroids(List<List<Coord>> map, Coord bestAsteroid)
+        public static int GetVaporizedAsteroids(List<List<Coord>> map, Coord bestAsteroid)
         {
-            var upVector = new Vector(0, -1);
-
-            var otherAsteroids = map.SelectMany(x => x).Where(x => x.Value == "#" && !(x.X == bestAsteroid.X && x.Y == bestAsteroid.Y)).ToList();
-            var otherSteroidsLines = otherAsteroids.Select(x =>
+            var queues = map
+                .SelectMany(x => x)
+                .Where(x => x.Value == "#" && !(x.X == bestAsteroid.X && x.Y == bestAsteroid.Y))
+                .Select(x => new
                 {
-                    var vector = new Vector(x.X - bestAsteroid.X, -(x.Y - bestAsteroid.Y));
-                    var vectorNormalized = vector.GetNormalized();
-                    var angle = GetAngleNormalizedVectors(upVector, vectorNormalized);
-                    //var dir = (initAsteroid.X - x.X) < 0 ? -1 : 1;
-                    //vectorNormalizedlineCoefficient *= dir;
-                    var manhattanDistance = Math.Abs(x.Y - bestAsteroid.Y) + Math.Abs(x.X - bestAsteroid.X);
-                    return new { Distance = manhattanDistance, VectorNormalized = vectorNormalized, Angle = angle, Coords = x};
+                    Distance = Math.Abs(x.Y - bestAsteroid.Y) + Math.Abs(x.X - bestAsteroid.X),
+                    Angle = GetAngleNormalizedVectors(new Vector(0, -1), new Vector(x.X - bestAsteroid.X, x.Y - bestAsteroid.Y).GetNormalized()),
+                    Coords = x
                 })
-                .ToList();
-
-            var groups = otherSteroidsLines
-                .GroupBy(x => x.VectorNormalized, new VectorEqualityComparer())
+                .GroupBy(x => x.Angle)
                 .OrderBy(x => x.First().Angle)
+                .Select(g => new Queue<Coord>(g.OrderBy(x => x.Distance).Select(x => x.Coords).ToList()))
                 .ToList();
 
-            foreach (var group in groups)
+            int counter = 1;
+            int index = 0;
+            while(queues.Any(q => q.Count > 0))
             {
-                Console.WriteLine($"X: {group.OrderBy(x => x.Distance).First().Coords.X}, " +
-                                  $"Y: {group.OrderBy(x => x.Distance).First().Coords.Y}");
+                var queue = queues[index % queues.Count];
+                if (queue.Count > 0)
+                {
+                    var coord = queue.Dequeue();
+                    Console.WriteLine($"#{counter} X: {coord.X}, Y: {coord.Y}");
+                    counter++;
+                    if (counter > 200)
+                        return coord.X * 100 + coord.Y;
+                }
+
+                index++;
             }
 
-
+            return -1;
         }
 
         public static double GetAngleNormalizedVectors(Vector x, Vector y)
         {
             var dotProduct = x.X * y.X + x.Y * y.Y;
-            return Math.Acos(dotProduct);
+            var det = x.X * y.Y - y.X * x.Y;
+            var result = Math.Atan2(det, dotProduct) * (180.0 / Math.PI);
+            return result < 0 ? result + 360 : result;
         }
 
 
         public static int GetNumberOfAsteroidsInSight(List<List<Coord>> map, Coord initAsteroid)
         {
-            var otherAsteroids = map.SelectMany(x => x).Where(x => x.Value == "#" && !(x.X == initAsteroid.X && x.Y == initAsteroid.Y)).ToList();
-            var otherSteroidsLines = otherAsteroids.Select(x =>
-            {
-                var vector = new Vector(initAsteroid.X - x.X, initAsteroid.Y - x.Y);
-                var vectorNormalized = vector.GetNormalized();
-                //var dir = (initAsteroid.X - x.X) < 0 ? -1 : 1;
-                //vectorNormalizedlineCoefficient *= dir;
-                var manhattanDistance = Math.Abs(x.Y - initAsteroid.Y) + Math.Abs(x.X - initAsteroid.X);
-                return new {Distance = manhattanDistance, VectorNormalized = vectorNormalized };
-            })
-            .ToList();
+            var groups = map.SelectMany(x => x)
+                    .Where(x => x.Value == "#" && !(x.X == initAsteroid.X && x.Y == initAsteroid.Y))
+                    .Select(x => new Vector(initAsteroid.X - x.X, initAsteroid.Y - x.Y)
+                        .GetNormalized())
+                    .GroupBy(x => x, new VectorEqualityComparer())
+                    .ToList();
 
-            var groups = otherSteroidsLines
-                .GroupBy(x => x.VectorNormalized, new VectorEqualityComparer())
-                .ToList();
-
-            var answer = groups.Count;
-
-            return answer;
-
+            return groups.Count;
         }
 
 
