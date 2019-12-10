@@ -60,7 +60,7 @@ namespace AoC.CSharpDay10
     {
         public bool Equals(Vector x, Vector y)
         {
-            var precision = 0.0001;
+            var precision = 0.00000000001;
             return Math.Abs(x.X - y.X) < precision && Math.Abs(x.Y - y.Y) < precision;
         }
 
@@ -79,15 +79,66 @@ namespace AoC.CSharpDay10
                 .ToList();
 
             var asteroids = input.SelectMany(x => x).Where(x => x.Value == "#").ToList();
-
             var asteroidsSight = asteroids.Select(x => new {Asteroid = x, SightCount = GetNumberOfAsteroidsInSight(input, x)}).ToList();
-
             var answer = asteroidsSight.Max(x => x.SightCount);
 
 
             return answer;
         }
 
+        public static int Solution2()
+        {
+            var input = File.ReadLines("data/day10.txt")
+                .Select((line, y) => line.ToCharArray().Select((sign, x) => new Coord(x, y, sign.ToString())).ToList())
+                .ToList();
+
+            var asteroids = input.SelectMany(x => x).Where(x => x.Value == "#").ToList();
+            var asteroidsSight = asteroids.Select(x => new { Asteroid = x, SightCount = GetNumberOfAsteroidsInSight(input, x) }).ToList();
+            var bestSightCount = asteroidsSight.Max(x => x.SightCount);
+
+            var bestAsteroid = asteroidsSight.Where(x => x.SightCount == bestSightCount).Select(x => x.Asteroid).FirstOrDefault();
+            GetVaporizedAsteroids(input, bestAsteroid);
+
+            return 0;
+
+        }
+
+        public static void GetVaporizedAsteroids(List<List<Coord>> map, Coord bestAsteroid)
+        {
+            var upVector = new Vector(0, -1);
+
+            var otherAsteroids = map.SelectMany(x => x).Where(x => x.Value == "#" && !(x.X == bestAsteroid.X && x.Y == bestAsteroid.Y)).ToList();
+            var otherSteroidsLines = otherAsteroids.Select(x =>
+                {
+                    var vector = new Vector(x.X - bestAsteroid.X, -(x.Y - bestAsteroid.Y));
+                    var vectorNormalized = vector.GetNormalized();
+                    var angle = GetAngleNormalizedVectors(upVector, vectorNormalized);
+                    //var dir = (initAsteroid.X - x.X) < 0 ? -1 : 1;
+                    //vectorNormalizedlineCoefficient *= dir;
+                    var manhattanDistance = Math.Abs(x.Y - bestAsteroid.Y) + Math.Abs(x.X - bestAsteroid.X);
+                    return new { Distance = manhattanDistance, VectorNormalized = vectorNormalized, Angle = angle, Coords = x};
+                })
+                .ToList();
+
+            var groups = otherSteroidsLines
+                .GroupBy(x => x.VectorNormalized, new VectorEqualityComparer())
+                .OrderBy(x => x.First().Angle)
+                .ToList();
+
+            foreach (var group in groups)
+            {
+                Console.WriteLine($"X: {group.OrderBy(x => x.Distance).First().Coords.X}, " +
+                                  $"Y: {group.OrderBy(x => x.Distance).First().Coords.Y}");
+            }
+
+
+        }
+
+        public static double GetAngleNormalizedVectors(Vector x, Vector y)
+        {
+            var dotProduct = x.X * y.X + x.Y * y.Y;
+            return Math.Acos(dotProduct);
+        }
 
 
         public static int GetNumberOfAsteroidsInSight(List<List<Coord>> map, Coord initAsteroid)
@@ -95,13 +146,12 @@ namespace AoC.CSharpDay10
             var otherAsteroids = map.SelectMany(x => x).Where(x => x.Value == "#" && !(x.X == initAsteroid.X && x.Y == initAsteroid.Y)).ToList();
             var otherSteroidsLines = otherAsteroids.Select(x =>
             {
-                var lineCoefficient = (double) (initAsteroid.Y - x.Y) / (initAsteroid.X - x.X);
                 var vector = new Vector(initAsteroid.X - x.X, initAsteroid.Y - x.Y);
                 var vectorNormalized = vector.GetNormalized();
                 //var dir = (initAsteroid.X - x.X) < 0 ? -1 : 1;
                 //vectorNormalizedlineCoefficient *= dir;
                 var manhattanDistance = Math.Abs(x.Y - initAsteroid.Y) + Math.Abs(x.X - initAsteroid.X);
-                return new {LineCoefficient = lineCoefficient, Distance = manhattanDistance, VectorNormalized = vectorNormalized };
+                return new {Distance = manhattanDistance, VectorNormalized = vectorNormalized };
             })
             .ToList();
 
@@ -115,9 +165,6 @@ namespace AoC.CSharpDay10
 
         }
 
-        public static int Solution2()
-        {
-            return 0;
-        }
+
     }
 }
