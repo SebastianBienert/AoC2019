@@ -20,9 +20,6 @@ namespace AoC.CSharp
             var timeSteps = 1000;
             foreach (var step in Enumerable.Range(0, timeSteps))
             {
-                //listOfMoons.ForEach(x => Console.WriteLine(x));
-                //Console.WriteLine();
-                //APply gravity
                 for (int i = 0; i < listOfMoons.Count; i++)
                 {
                     for (int j = i + 1; j < listOfMoons.Count; j++)
@@ -35,11 +32,10 @@ namespace AoC.CSharp
             }
 
             var result = listOfMoons.Sum(x => x.TotalEnergy);
-
             return result;
         }
 
-        public static int Solution2()
+        public static long Solution2()
         {
             var listOfMoons = new List<Moon>()
             {
@@ -49,48 +45,112 @@ namespace AoC.CSharp
                 new Moon(new Vectord3D(-19, 7, 8))
             };
 
-            var timeSteps = 1000;
-            foreach (var step in Enumerable.Range(0, timeSteps))
+            var xSteps = 0l;
+            do
             {
-                //listOfMoons.ForEach(x => Console.WriteLine(x));
-                //Console.WriteLine();
-                //APply gravity
                 for (int i = 0; i < listOfMoons.Count; i++)
                 {
                     for (int j = i + 1; j < listOfMoons.Count; j++)
                     {
-                        listOfMoons[i].ApplyGravity(listOfMoons[j]);
+                        listOfMoons[i].ApplyGravityX(listOfMoons[j]);
                     }
                 }
 
-                listOfMoons.ForEach(x => x.ApplyVelocity());
-            }
+                xSteps++;
+                listOfMoons.ForEach(x => x.ApplyVelocityX());
+            } while (!listOfMoons.All(m => m.IsOriginalX));
 
-            var result = listOfMoons.Sum(x => x.TotalEnergy);
+            var ySteps = 0l;
+            do
+            {
+                for (int i = 0; i < listOfMoons.Count; i++)
+                {
+                    for (int j = i + 1; j < listOfMoons.Count; j++)
+                    {
+                        listOfMoons[i].ApplyGravityY(listOfMoons[j]);
+                    }
+                }
+
+                ySteps++;
+                listOfMoons.ForEach(x => x.ApplyVelocityY());
+            } while (!listOfMoons.All(m => m.IsOriginalY));
+
+            var zSteps = 0l;
+            do
+            {
+                for (int i = 0; i < listOfMoons.Count; i++)
+                {
+                    for (int j = i + 1; j < listOfMoons.Count; j++)
+                    {
+                        listOfMoons[i].ApplyGravityZ(listOfMoons[j]);
+                    }
+                }
+
+                zSteps++;
+                listOfMoons.ForEach(x => x.ApplyVelocityZ());
+            } while (!listOfMoons.All(m => m.IsOriginalZ));
+
+            var result = Lcm(xSteps, Lcm(ySteps, zSteps));
 
             return result;
         }
 
+        static long Gcf(long a, long b)
+        {
+            while (b != 0)
+            {
+                long temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+        static long Lcm(long a, long b)
+        {
+            return (a / Gcf(a, b)) * b;
+        }
+
         public class Moon
         {
+            private readonly Vectord3D _initialPosition;
             public Vectord3D Velocity { get; set; }
             public Vectord3D Position { get; set; }
             public int PotentialEnergy => Math.Abs(Position.X) + Math.Abs(Position.Y) + Math.Abs(Position.Z);
             public int KineticEnergy => Math.Abs(Velocity.X) + Math.Abs(Velocity.Y) + Math.Abs(Velocity.Z);
             public int TotalEnergy => PotentialEnergy * KineticEnergy;
+            public bool IsOriginalX => Position.X == _initialPosition.X && Velocity.X == 0;
+            public bool IsOriginalY => Position.Y == _initialPosition.Y && Velocity.Y == 0;
+            public bool IsOriginalZ => Position.Z == _initialPosition.Z && Velocity.Z == 0;
 
             public Moon(Vectord3D position)
             {
                 Velocity = new Vectord3D(0, 0, 0);
-                Position = position;
+                _initialPosition = new Vectord3D(position.X, position.Y, position.Z);
+                Position = position;   
             }
 
             public void ApplyVelocity()
             {
-                Position = new Vectord3D(Position.X + Velocity.X, Position.Y + Velocity.Y, Position.Z + Velocity.Z);
+                ApplyVelocityX();
+                ApplyVelocityY();
+                ApplyVelocityZ();
             }
 
-            public void ApplyGravity(Moon other)
+            public void ApplyVelocityX()
+            {
+                Position.X += Velocity.X;
+            }
+            public void ApplyVelocityY()
+            {
+                Position.Y += Velocity.Y;
+            }
+            public void ApplyVelocityZ()
+            {
+                Position.Z += Velocity.Z;
+            }
+
+            public void ApplyGravityX(Moon other)
             {
                 if (Position.X < other.Position.X)
                 {
@@ -102,7 +162,10 @@ namespace AoC.CSharp
                     Velocity.X -= 1;
                     other.Velocity.X += 1;
                 }
+            }
 
+            public void ApplyGravityY(Moon other)
+            {
                 if (Position.Y < other.Position.Y)
                 {
                     Velocity.Y += 1;
@@ -113,7 +176,10 @@ namespace AoC.CSharp
                     Velocity.Y -= 1;
                     other.Velocity.Y += 1;
                 }
+            }
 
+            public void ApplyGravityZ(Moon other)
+            {
                 if (Position.Z < other.Position.Z)
                 {
                     Velocity.Z += 1;
@@ -124,6 +190,13 @@ namespace AoC.CSharp
                     Velocity.Z -= 1;
                     other.Velocity.Z += 1;
                 }
+            }
+
+            public void ApplyGravity(Moon other)
+            {
+                ApplyGravityX(other);
+                ApplyGravityY(other);
+                ApplyGravityZ(other);
             }
 
             public override string ToString()

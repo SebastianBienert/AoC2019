@@ -11,7 +11,7 @@ namespace CHash
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(Day12.Solution1());
+            Console.WriteLine(Day12.Solution2());
            // Console.WriteLine(Day10.Solution2());
             Console.ReadLine();
         }
