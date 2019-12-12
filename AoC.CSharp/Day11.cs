@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -19,7 +21,49 @@ namespace AoC.CSharpDay11
     public class Day11
     {
         public static int PLANE_SIZE = 10000;
+        public static List<Direction> Directions = new List<Direction> { Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT };
 
+        public static int Solution2()
+        {
+            var input = File.ReadAllText("data/day11.txt")
+                .Split(',')
+                .Select(BigInteger.Parse)
+                .ToList();
+
+            var plane = Enumerable.Range(0, PLANE_SIZE)
+                .Select(l => Enumerable.Repeat(".", PLANE_SIZE).ToList())
+                .ToList();
+            //START_POS
+
+            var currentInput = BigInteger.One;
+            var currentPos = (X: PLANE_SIZE / 2, Y: PLANE_SIZE / 2);
+            plane[currentPos.Y][currentPos.X] = "#";
+            var currentDirection = Direction.UP;
+            var amplifier = new Amplifier(0, input);
+
+            var points = new List<(int X, int Y)>();
+            
+            do
+            {
+                points.Add(currentPos);
+                var outputColor = amplifier.GetOutput(currentInput);
+                if (outputColor.final)
+                    break;
+                var outputDirection = amplifier.GetOutput();
+
+                currentDirection = outputDirection.value == BigInteger.One
+                    ? Directions[Mod(Directions.FindIndex(x => x == currentDirection) + 1, 4)]
+                    : Directions[Mod(Directions.FindIndex(x => x == currentDirection) - 1, 4)];
+
+                plane[currentPos.Y][currentPos.X] = outputColor.value == 0 ? "." : "#";
+                currentPos = GetNextPosition(currentDirection, currentPos);
+                currentInput = plane[currentPos.Y][currentPos.X] == "." ? BigInteger.Zero : BigInteger.One;
+            } while (true);
+
+            PrintToBnp(plane);
+            var result = points.GroupBy(x => new { x.X, x.Y }).Count();
+            return result;
+        }
 
         public static int Solution1()
         {
@@ -28,26 +72,20 @@ namespace AoC.CSharpDay11
                 .Select(BigInteger.Parse)
                 .ToList();
 
-
             var plane = Enumerable.Range(0, PLANE_SIZE)
                 .Select(l => Enumerable.Repeat(".", PLANE_SIZE).ToList())
                 .ToList();
-            //START_POS
+
 
             var currentInput = BigInteger.Zero;
             var currentPos = (X: PLANE_SIZE / 2, Y: PLANE_SIZE / 2);
-
-
-            var directions = new List<Direction> { Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT };
-
-            //plane[currentPos.Y][currentPos.X] = "^";
             var currentDirection = Direction.UP;
             var amplifier = new Amplifier(0, input);
 
             var points = new List<(int X, int Y)>();
-            points.Add(currentPos);
             do
             {
+                points.Add(currentPos);
                 var outputColor = amplifier.GetOutput(currentInput);
                 if (outputColor.final)
                     break;
@@ -55,51 +93,48 @@ namespace AoC.CSharpDay11
                 if (outputDirection.final)
                     break;
 
-                var chuj = Mod(directions.FindIndex(x => x == currentDirection) - 1, 4);
                 currentDirection = outputDirection.value == BigInteger.One
-                    ? directions[Mod(directions.FindIndex(x => x == currentDirection) + 1, 4)]
-                    : directions[Mod(directions.FindIndex(x => x == currentDirection) - 1, 4)];
+                    ? Directions[Mod(Directions.FindIndex(x => x == currentDirection) + 1, 4)]
+                    : Directions[Mod(Directions.FindIndex(x => x == currentDirection) - 1, 4)];
 
                 plane[currentPos.Y][currentPos.X] = outputColor.value == 0 ? "." : "#";
-                switch (currentDirection)
-                {
-                    case Direction.UP:
-                        {
-                            currentPos = (X: currentPos.X, Y: currentPos.Y - 1);
-                            break;
-                        }
-                    case Direction.DOWN:
-                        {
-                            currentPos = (X: currentPos.X, Y: currentPos.Y + 1);
-                            break;
-                        }
-                    case Direction.RIGHT:
-                        {
-                            currentPos = (X: currentPos.X + 1, Y: currentPos.Y);
-                            break;
-                        }
-                    case Direction.LEFT:
-                        {
-                            currentPos = (X: currentPos.X - 1, Y: currentPos.Y);
-                            break;
-                        }
-                }
-
+                currentPos = GetNextPosition(currentDirection, currentPos);
                 currentInput = plane[currentPos.Y][currentPos.X] == "." ? BigInteger.Zero : BigInteger.One;
-                // PrintPlane(plane);
-                points.Add(currentPos);
             } while (true);
 
-            
             var result = points.GroupBy(x => new { x.X, x.Y }).Count();
             return result;
+        }
+
+        private static (int X, int Y) GetNextPosition(Direction currentDirection, (int X, int Y) currentPos)
+        {
+            switch (currentDirection)
+            {
+                case Direction.UP:
+                {
+                    return (X: currentPos.X, Y: currentPos.Y - 1);
+                }
+                case Direction.DOWN:
+                {
+                    return (X: currentPos.X, Y: currentPos.Y + 1);
+                    }
+                case Direction.RIGHT:
+                {
+                    return (X: currentPos.X + 1, Y: currentPos.Y);
+                    }
+                case Direction.LEFT:
+                {
+                    return (X: currentPos.X - 1, Y: currentPos.Y);
+                }
+                default:
+                    return currentPos;
+            }
         }
 
         private static int Mod(int x, int m)
         {
             return (x % m + m) % m;
         }
-
 
         private static void PrintPlane(List<List<string>> plane)
         {
@@ -112,11 +147,21 @@ namespace AoC.CSharpDay11
             }
         }
 
-        public static int Solution2()
+        private static void PrintToBnp(List<List<string>> plane)
         {
-
-
-            return 0;
+            using (Bitmap b = new Bitmap(PLANE_SIZE, PLANE_SIZE))
+            using (Graphics g = Graphics.FromImage(b))
+            {
+                for (int i = 0; i < PLANE_SIZE; i++)
+                {
+                    for (int j = 0; j < PLANE_SIZE; j++)
+                    {
+                        var brush = plane[i][j] == "." ? Brushes.Black : Brushes.White;
+                        g.FillRectangle(brush, new Rectangle(j, i, 1, 1));
+                    }
+                }
+                b.Save(@"D:\solve.png", ImageFormat.Png);
+            }
         }
     }
 
@@ -226,7 +271,6 @@ namespace AoC.CSharpDay11
 
                     var dstIndex = codeAndModes.thirdParameter == Mode.Position ? _memory[Pointer + 3] : _memory[Pointer + 3] + RelativeBase;
                     _memory[(int)dstIndex] = first * second;
-                    //var third = _memory[Pointer + 3];
                     if (first < second)
                     {
                         _memory[(int)dstIndex] = 1;
@@ -243,7 +287,6 @@ namespace AoC.CSharpDay11
 
                     var dstIndex = codeAndModes.thirdParameter == Mode.Position ? _memory[Pointer + 3] : _memory[Pointer + 3] + RelativeBase;
                     _memory[(int)dstIndex] = first * second;
-                    //var third = _memory[Pointer + 3];
                     if (first == second)
                     {
                         _memory[(int)dstIndex] = 1;
